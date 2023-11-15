@@ -4,3 +4,9 @@
 [submodule "vendor/glfw"]
 	path = vendor/glfw
 	url = git@github.com:ajaxian79/glfw.git
+[submodule "vendor/glm"]
+	path = vendor/glm
+	url = git@github.com:g-truc/glm.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = git@github.com:ajaxian79/imgui.git
