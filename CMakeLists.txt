@@ -28,6 +28,16 @@ include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
 set(GLM_DIR vendor/glm)
 include_directories(${GLM_DIR} ..)
 
+# stb_image
+set(STB_IMAGE_DIR vendor/stb_image)
+include_directories(${STB_IMAGE_DIR} ..)
+
+# spdlog
+
+set(SPDLOG_DIR vendor/spdlog)
+add_subdirectory(${SPDLOG_DIR})
+include_directories(${SPDLOG_DIR}/include ..)
+
 # Libraries
 #find_package(Vulkan REQUIRED)
 #find_library(VULKAN_LIBRARY

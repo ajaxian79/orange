@@ -3,6 +3,9 @@
 //
 
 #include "Application.h"
+#include "ImGuiTheme.h"
+#include "UI.h"
+#include "../core/Log.h"
 
 //
 // Adapted from Dear ImGui OpenGL3 example and Walnut which was adapted from Dear ImGui Vulkan example
@@ -30,8 +33,15 @@
 
 #include <iostream>
 
-// Emedded font
+// Embedded font
 #include "../fonts/Roboto-Regular.embed"
+#include "../fonts/Roboto-Bold.embed"
+#include "../fonts/Roboto-Italic.embed"
+#include "imgui_internal.h"
+
+// Embedded images
+#include "../images/Walnut-Icon.embed"
+#include "../images/WindowImages.embed"
 
 extern bool g_ApplicationRunning;
 
@@ -50,6 +60,8 @@ extern bool g_ApplicationRunning;
 static void glfw_error_callback(int error, const char *description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
+
+static std::unordered_map<std::string, ImFont*> s_Fonts;
 
 static Orange::Application *s_Instance = nullptr;
 
@@ -129,11 +141,23 @@ namespace Orange {
         //io.ConfigViewportsNoTaskBarIcon = true;
 
         // Setup Dear ImGui style
-        ImGui::StyleColorsDark();
+//        ImGui::StyleColorsDark();
         //ImGui::StyleColorsClassic();
 
+        // Theme colors
+        UI::SetHazelTheme();
+
+        // Style
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowPadding = ImVec2(10.0f, 10.0f);
+        style.FramePadding = ImVec2(8.0f, 6.0f);
+        style.ItemSpacing = ImVec2(6.0f, 6.0f);
+        style.ChildRounding = 6.0f;
+        style.PopupRounding = 6.0f;
+        style.FrameRounding = 6.0f;
+        style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+
         // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-        ImGuiStyle &style = ImGui::GetStyle();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             style.WindowRounding = 0.0f;
             style.Colors[ImGuiCol_WindowBg].w = 1.0f;
@@ -148,7 +172,34 @@ namespace Orange {
         fontConfig.FontDataOwnedByAtlas = false;
         ImFont *robotoFont = io.Fonts->AddFontFromMemoryTTF((void *) g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f,
                                                             &fontConfig);
+        s_Fonts["Default"] = robotoFont;
+        s_Fonts["Bold"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoBold, sizeof(g_RobotoBold), 20.0f, &fontConfig);
+        s_Fonts["Italic"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoItalic, sizeof(g_RobotoItalic), 20.0f, &fontConfig);
         io.FontDefault = robotoFont;
+
+
+        // Load images
+
+        int w, h;
+        void* data = Image::Decode(g_WalnutIcon, sizeof(g_WalnutIcon), w, h);
+        m_AppHeaderIcon = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        free(data);
+
+        data = Image::Decode(g_WindowMinimizeIcon, sizeof(g_WindowMinimizeIcon), w, h);
+        m_IconMinimize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        free(data);
+
+        data = Image::Decode(g_WindowMaximizeIcon, sizeof(g_WindowMaximizeIcon), w, h);
+        m_IconMaximize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        free(data);
+
+        data = Image::Decode(g_WindowRestoreIcon, sizeof(g_WindowRestoreIcon), w, h);
+        m_IconRestore = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        free(data);
+
+        data = Image::Decode(g_WindowCloseIcon, sizeof(g_WindowCloseIcon), w, h);
+        m_IconClose = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        free(data);
     }
 
     void Application::Shutdown() {
@@ -156,6 +207,16 @@ namespace Orange {
             layer->OnDetach();
 
         m_LayerStack.clear();
+
+
+        // Release resources
+        // NOTE(Yan): to avoid doing this manually, we shouldn't
+        //            store resources in this Application class
+//        m_AppHeaderIcon.reset();
+//        m_IconClose.reset();
+//        m_IconMinimize.reset();
+//        m_IconMaximize.reset();
+//        m_IconRestore.reset();
 
         // Cleanup
         ImGui_ImplOpenGL3_Shutdown();
@@ -166,6 +227,183 @@ namespace Orange {
         glfwTerminate();
 
         g_ApplicationRunning = false;
+
+        Log::Shutdown();
+    }
+
+
+    void Application::UI_DrawTitlebar(float& outTitlebarHeight)
+    {
+        const float titlebarHeight = 58.0f;
+        const bool isMaximized = IsMaximized();
+        float titlebarVerticalOffset = isMaximized ? -6.0f : 0.0f;
+        const ImVec2 windowPadding = ImGui::GetCurrentWindow()->WindowPadding;
+
+        ImGui::SetCursorPos(ImVec2(windowPadding.x, windowPadding.y + titlebarVerticalOffset));
+        const ImVec2 titlebarMin = ImGui::GetCursorScreenPos();
+        const ImVec2 titlebarMax = { ImGui::GetCursorScreenPos().x + ImGui::GetWindowWidth() - windowPadding.y * 2.0f,
+                                     ImGui::GetCursorScreenPos().y + titlebarHeight };
+        auto* bgDrawList = ImGui::GetBackgroundDrawList();
+        auto* fgDrawList = ImGui::GetForegroundDrawList();
+        bgDrawList->AddRectFilled(titlebarMin, titlebarMax, UI::Colors::Theme::titlebar);
+        // DEBUG TITLEBAR BOUNDS
+        // fgDrawList->AddRect(titlebarMin, titlebarMax, UI::Colors::Theme::invalidPrefab);
+
+        // Logo
+        {
+            const int logoWidth = 48;// m_LogoTex->GetWidth();
+            const int logoHeight = 48;// m_LogoTex->GetHeight();
+            const ImVec2 logoOffset(16.0f + windowPadding.x, 5.0f + windowPadding.y + titlebarVerticalOffset);
+            const ImVec2 logoRectStart = { ImGui::GetItemRectMin().x + logoOffset.x, ImGui::GetItemRectMin().y + logoOffset.y };
+            const ImVec2 logoRectMax = { logoRectStart.x + logoWidth, logoRectStart.y + logoHeight };
+            fgDrawList->AddImage(m_AppHeaderIcon->GetDescriptorSet(), logoRectStart, logoRectMax);
+        }
+
+        ImGui::BeginHorizontal("Titlebar", { ImGui::GetWindowWidth() - windowPadding.y * 2.0f, ImGui::GetFrameHeightWithSpacing() });
+
+        static float moveOffsetX;
+        static float moveOffsetY;
+        const float w = ImGui::GetContentRegionAvail().x;
+        const float buttonsAreaWidth = 94;
+
+        // Title bar drag area
+        // On Windows we hook into the GLFW win32 window internals
+        ImGui::SetCursorPos(ImVec2(windowPadding.x, windowPadding.y + titlebarVerticalOffset)); // Reset cursor pos
+        // DEBUG DRAG BOUNDS
+        // fgDrawList->AddRect(ImGui::GetCursorScreenPos(), ImVec2(ImGui::GetCursorScreenPos().x + w - buttonsAreaWidth, ImGui::GetCursorScreenPos().y + titlebarHeight), UI::Colors::Theme::invalidPrefab);
+        ImGui::InvisibleButton("##titleBarDragZone", ImVec2(w - buttonsAreaWidth, titlebarHeight));
+
+        m_TitleBarHovered = ImGui::IsItemHovered();
+
+        if (isMaximized)
+        {
+            float windowMousePosY = ImGui::GetMousePos().y - ImGui::GetCursorScreenPos().y;
+            if (windowMousePosY >= 0.0f && windowMousePosY <= 5.0f)
+                m_TitleBarHovered = true; // Account for the top-most pixels which don't register
+        }
+
+        // Draw Menubar
+        if (m_MenubarCallback)
+        {
+            ImGui::SuspendLayout();
+            {
+                ImGui::SetItemAllowOverlap();
+                const float logoHorizontalOffset = 16.0f * 2.0f + 48.0f + windowPadding.x;
+                ImGui::SetCursorPos(ImVec2(logoHorizontalOffset, 6.0f + titlebarVerticalOffset));
+                UI_DrawMenubar();
+
+                if (ImGui::IsItemHovered())
+                    m_TitleBarHovered = false;
+            }
+
+            ImGui::ResumeLayout();
+        }
+
+        {
+            // Centered Window title
+            ImVec2 currentCursorPos = ImGui::GetCursorPos();
+            ImVec2 textSize = ImGui::CalcTextSize(m_Specification.Name.c_str());
+            ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() * 0.5f - textSize.x * 0.5f, 2.0f + windowPadding.y + 6.0f));
+            ImGui::Text("%s", m_Specification.Name.c_str()); // Draw title
+            ImGui::SetCursorPos(currentCursorPos);
+        }
+
+        // Window buttons
+        const ImU32 buttonColN = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 0.9f);
+        const ImU32 buttonColH = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.2f);
+        const ImU32 buttonColP = UI::Colors::Theme::textDarker;
+        const float buttonWidth = 14.0f;
+        const float buttonHeight = 14.0f;
+
+        // Minimize Button
+
+        ImGui::Spring();
+        UI::ShiftCursorY(8.0f);
+        {
+            const int iconWidth = m_IconMinimize->GetWidth();
+            const int iconHeight = m_IconMinimize->GetHeight();
+            const float padY = (buttonHeight - (float)iconHeight) / 2.0f;
+            if (ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight)))
+            {
+                // TODO: move this stuff to a better place, like Window class
+                if (m_WindowHandle)
+                {
+                    Application::Get().QueueEvent([windowHandle = m_WindowHandle]() { glfwIconifyWindow(windowHandle); });
+                }
+            }
+
+            UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY));
+        }
+
+
+        // Maximize Button
+        ImGui::Spring(-1.0f, 17.0f);
+        UI::ShiftCursorY(8.0f);
+        {
+            const int iconWidth = m_IconMaximize->GetWidth();
+            const int iconHeight = m_IconMaximize->GetHeight();
+
+            const bool isMaximized = IsMaximized();
+
+            if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
+            {
+                Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
+                                              {
+                                                  if (isMaximized)
+                                                      glfwRestoreWindow(windowHandle);
+                                                  else
+                                                      glfwMaximizeWindow(windowHandle);
+                                              });
+            }
+
+            UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP);
+        }
+
+        // Close Button
+        ImGui::Spring(-1.0f, 15.0f);
+        UI::ShiftCursorY(8.0f);
+        {
+            const int iconWidth = m_IconClose->GetWidth();
+            const int iconHeight = m_IconClose->GetHeight();
+            if (ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight)))
+                Application::Get().Close();
+
+            UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP);
+        }
+
+        ImGui::Spring(-1.0f, 18.0f);
+        ImGui::EndHorizontal();
+
+        outTitlebarHeight = titlebarHeight;
+    }
+
+    void Application::UI_DrawMenubar()
+    {
+        if (!m_MenubarCallback)
+            return;
+
+        if (m_Specification.CustomTitlebar)
+        {
+            const ImRect menuBarRect = { ImGui::GetCursorPos(), { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x, ImGui::GetFrameHeightWithSpacing() } };
+
+            ImGui::BeginGroup();
+            if (UI::BeginMenubar(menuBarRect))
+            {
+                m_MenubarCallback();
+            }
+
+            UI::EndMenubar();
+            ImGui::EndGroup();
+
+        }
+        else
+        {
+            if (ImGui::BeginMenuBar())
+            {
+                m_MenubarCallback();
+                ImGui::EndMenuBar();
+            }
+        }
     }
 
     void Application::Run() {
@@ -209,38 +447,55 @@ namespace Orange {
                 window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                                 ImGuiWindowFlags_NoMove;
                 window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+                if (!m_Specification.CustomTitlebar && m_MenubarCallback)
+                    window_flags |= ImGuiWindowFlags_MenuBar;
+
+                const bool isMaximized = IsMaximized();
 
                 // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
                 // and handle the pass-thru hole, so we ask Begin() to not render a background.
                 if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
                     window_flags |= ImGuiWindowFlags_NoBackground;
 
-                // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-                // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-                // all active windows docked into it will lose their parent and become undocked.
-                // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-                // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                ImGui::Begin("DockSpace Demo", nullptr, window_flags);
-                ImGui::PopStyleVar();
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, isMaximized ? ImVec2(6.0f, 6.0f) : ImVec2(1.0f, 1.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
+
+                ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+                ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
+                ImGui::PopStyleColor(); // MenuBarBg
+                ImGui::PopStyleVar(2);
 
                 ImGui::PopStyleVar(2);
 
-                // Submit the DockSpace
-                ImGuiIO &io = ImGui::GetIO();
-                if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-                    ImGuiID dockspace_id = ImGui::GetID("VulkanAppDockspace");
-                    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(50, 50, 50, 255));
+                    // Draw window border if the window is not maximized
+                    if (!isMaximized)
+                        UI::RenderWindowOuterBorders(ImGui::GetCurrentWindow());
+
+                    ImGui::PopStyleColor(); // ImGuiCol_Border
                 }
 
-                if (m_MenubarCallback) {
-                    if (ImGui::BeginMenuBar()) {
-                        m_MenubarCallback();
-                        ImGui::EndMenuBar();
-                    }
+                if (m_Specification.CustomTitlebar)
+                {
+                    float titleBarHeight;
+                    UI_DrawTitlebar(titleBarHeight);
+                    ImGui::SetCursorPosY(titleBarHeight);
+
                 }
 
-                for (auto &layer: m_LayerStack)
+                // Dockspace
+                ImGuiIO& io = ImGui::GetIO();
+                ImGuiStyle& style = ImGui::GetStyle();
+                float minWinSizeX = style.WindowMinSize.x;
+                style.WindowMinSize.x = 370.0f;
+                ImGui::DockSpace(ImGui::GetID("MyDockspace"));
+                style.WindowMinSize.x = minWinSizeX;
+
+                if (!m_Specification.CustomTitlebar)
+                    UI_DrawMenubar();
+
+                for (auto& layer : m_LayerStack)
                     layer->OnUIRender();
 
                 ImGui::End();
@@ -248,13 +503,16 @@ namespace Orange {
 
             // Rendering
             ImGui::Render();
+            ImDrawData* main_draw_data = ImGui::GetDrawData();
+            const bool main_is_minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
             int display_w, display_h;
             glfwGetFramebufferSize(m_WindowHandle, &display_w, &display_h);
             glViewport(0, 0, display_w, display_h);
             glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w,
                          clear_color.w);
             glClear(GL_COLOR_BUFFER_BIT);
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            if (!main_is_minimized)
+                ImGui_ImplOpenGL3_RenderDrawData(main_draw_data);
 
 
             // Update and Render additional Platform Windows
@@ -265,7 +523,10 @@ namespace Orange {
                 glfwMakeContextCurrent(backup_current_context);
             }
 
-            glfwSwapBuffers(m_WindowHandle);
+            if (!main_is_minimized)
+                glfwSwapBuffers(m_WindowHandle);
+            else
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
             float time = GetTime();
             m_FrameTime = time - m_LastFrameTime;
@@ -277,6 +538,11 @@ namespace Orange {
 
     void Application::Close() {
         m_Running = false;
+    }
+
+    bool Application::IsMaximized() const
+    {
+        return (bool)glfwGetWindowAttrib(m_WindowHandle, GLFW_MAXIMIZED);
     }
 
     float Application::GetTime() {
