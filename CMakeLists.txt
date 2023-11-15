@@ -43,7 +43,8 @@ set(LIBRARIES "glfw;${OPENGL_LIBRARY}")
 include_directories(${GLFW_DIR}/deps)
 
 file(GLOB_RECURSE app_sources ./src/*.cpp)
+file(GLOB_RECURSE lib_sources ./lib/*.cpp)
 
-add_executable(orange ${app_sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
+add_executable(orange ${app_sources} ${lib_sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
 target_link_libraries(orange ${LIBRARIES})
 target_compile_definitions(orange PUBLIC -DImTextureID=ImU64)

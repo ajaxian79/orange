@@ -11,14 +11,18 @@
 
 #include <stdio.h>          // printf, fprintf
 #include <stdlib.h>         // abort
+
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
+
 #include <GLFW/glfw3.h>
 #include <GL/gl.h>
 #include <vulkan/vulkan.h>
@@ -43,41 +47,35 @@ extern bool g_ApplicationRunning;
 #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 
-static void glfw_error_callback(int error, const char* description)
-{
+static void glfw_error_callback(int error, const char *description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-static Orange::Application* s_Instance = nullptr;
+static Orange::Application *s_Instance = nullptr;
 
 namespace Orange {
 
-    Application::Application(const ApplicationSpecification& specification)
-            : m_Specification(specification)
-    {
+    Application::Application(const ApplicationSpecification &specification)
+            : m_Specification(specification) {
         s_Instance = this;
 
         Init();
     }
 
-    Application::~Application()
-    {
+    Application::~Application() {
         Shutdown();
 
         s_Instance = nullptr;
     }
 
-    Application& Application::Get()
-    {
+    Application &Application::Get() {
         return *s_Instance;
     }
 
-    void Application::Init()
-    {
+    void Application::Init() {
         // Setup GLFW window
         glfwSetErrorCallback(glfw_error_callback);
-        if (!glfwInit())
-        {
+        if (!glfwInit()) {
             std::cerr << "Could not initalize GLFW!\n";
             return;
         }
@@ -99,7 +97,7 @@ namespace Orange {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #else
         // GL 3.0 + GLSL 130
-        const char* glsl_version = "#version 130";
+        const char *glsl_version = "#version 130";
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
@@ -107,10 +105,10 @@ namespace Orange {
 #endif
 
         // Create window with graphics context
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(), NULL, NULL);
-        if (m_WindowHandle == NULL)
-        {
+//        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(),
+                                          nullptr, nullptr);
+        if (m_WindowHandle == nullptr) {
             std::cerr << "Could not initalize GLFW!\n";
             return;
         }
@@ -121,7 +119,8 @@ namespace Orange {
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        ImGuiIO &io = ImGui::GetIO();
+        (void) io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
@@ -134,9 +133,8 @@ namespace Orange {
         //ImGui::StyleColorsClassic();
 
         // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-        ImGuiStyle& style = ImGui::GetStyle();
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
+        ImGuiStyle &style = ImGui::GetStyle();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             style.WindowRounding = 0.0f;
             style.Colors[ImGuiCol_WindowBg].w = 1.0f;
         }
@@ -148,13 +146,13 @@ namespace Orange {
         // Load default font
         ImFontConfig fontConfig;
         fontConfig.FontDataOwnedByAtlas = false;
-        ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f, &fontConfig);
+        ImFont *robotoFont = io.Fonts->AddFontFromMemoryTTF((void *) g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f,
+                                                            &fontConfig);
         io.FontDefault = robotoFont;
     }
 
-    void Application::Shutdown()
-    {
-        for (auto& layer : m_LayerStack)
+    void Application::Shutdown() {
+        for (auto &layer: m_LayerStack)
             layer->OnDetach();
 
         m_LayerStack.clear();
@@ -170,16 +168,14 @@ namespace Orange {
         g_ApplicationRunning = false;
     }
 
-    void Application::Run()
-    {
+    void Application::Run() {
         m_Running = true;
 
         ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-        ImGuiIO& io = ImGui::GetIO();
+        ImGuiIO &io = ImGui::GetIO();
 
         // Main loop
-        while (!glfwWindowShouldClose(m_WindowHandle) && m_Running)
-        {
+        while (!glfwWindowShouldClose(m_WindowHandle) && m_Running) {
             // Poll and handle events (inputs, window resize, etc.)
             // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
             // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -187,7 +183,7 @@ namespace Orange {
             // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
             glfwPollEvents();
 
-            for (auto& layer : m_LayerStack)
+            for (auto &layer: m_LayerStack)
                 layer->OnUpdate(m_TimeStep);
 
             // Start the Dear ImGui frame
@@ -204,13 +200,14 @@ namespace Orange {
                 if (m_MenubarCallback)
                     window_flags |= ImGuiWindowFlags_MenuBar;
 
-                const ImGuiViewport* viewport = ImGui::GetMainViewport();
+                const ImGuiViewport *viewport = ImGui::GetMainViewport();
                 ImGui::SetNextWindowPos(viewport->WorkPos);
                 ImGui::SetNextWindowSize(viewport->WorkSize);
                 ImGui::SetNextWindowViewport(viewport->ID);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-                window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+                window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                                ImGuiWindowFlags_NoMove;
                 window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
                 // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
@@ -230,23 +227,20 @@ namespace Orange {
                 ImGui::PopStyleVar(2);
 
                 // Submit the DockSpace
-                ImGuiIO& io = ImGui::GetIO();
-                if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-                {
+                ImGuiIO &io = ImGui::GetIO();
+                if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
                     ImGuiID dockspace_id = ImGui::GetID("VulkanAppDockspace");
                     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
                 }
 
-                if (m_MenubarCallback)
-                {
-                    if (ImGui::BeginMenuBar())
-                    {
+                if (m_MenubarCallback) {
+                    if (ImGui::BeginMenuBar()) {
                         m_MenubarCallback();
                         ImGui::EndMenuBar();
                     }
                 }
 
-                for (auto& layer : m_LayerStack)
+                for (auto &layer: m_LayerStack)
                     layer->OnUIRender();
 
                 ImGui::End();
@@ -257,19 +251,21 @@ namespace Orange {
             int display_w, display_h;
             glfwGetFramebufferSize(m_WindowHandle, &display_w, &display_h);
             glViewport(0, 0, display_w, display_h);
-            glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+            glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w,
+                         clear_color.w);
             glClear(GL_COLOR_BUFFER_BIT);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 
             // Update and Render additional Platform Windows
-            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            {
-                GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+                GLFWwindow *backup_current_context = glfwGetCurrentContext();
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
                 glfwMakeContextCurrent(backup_current_context);
             }
+
+            glfwSwapBuffers(m_WindowHandle);
 
             float time = GetTime();
             m_FrameTime = time - m_LastFrameTime;
@@ -279,14 +275,11 @@ namespace Orange {
 
     }
 
-    void Application::Close()
-    {
+    void Application::Close() {
         m_Running = false;
     }
 
-    float Application::GetTime()
-    {
-        return (float)glfwGetTime();
+    float Application::GetTime() {
+        return (float) glfwGetTime();
     }
-
 }
