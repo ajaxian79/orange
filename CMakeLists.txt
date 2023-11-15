@@ -24,6 +24,10 @@ include_directories(${GLFW_DIR}/include)
 set(IMGUI_DIR vendor/imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
 
+# GLM
+set(GLM_DIR vendor/glm)
+include_directories(${GLM_DIR} ..)
+
 # Libraries
 #find_package(Vulkan REQUIRED)
 #find_library(VULKAN_LIBRARY
