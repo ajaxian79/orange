@@ -117,7 +117,17 @@ namespace Orange {
 #endif
 
         // Create window with graphics context
-//        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+        if (m_Specification.CustomTitlebar)
+        {
+            glfwWindowHint(GLFW_TITLEBAR, false);
+
+            // NOTE(Yan): Undecorated windows are probably
+            //            also desired, so make this an option
+            // glfwWindowHint(GLFW_DECORATED, false);
+        }
+
         m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(),
                                           nullptr, nullptr);
         if (m_WindowHandle == nullptr) {
