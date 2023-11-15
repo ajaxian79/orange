@@ -1,0 +1,6 @@
+[submodule "vendor/munit"]
+	path = vendor/munit
+	url = git@github.com:nemequ/munit.git
+[submodule "vendor/glfw"]
+	path = vendor/glfw
+	url = git@github.com:ajaxian79/glfw.git
