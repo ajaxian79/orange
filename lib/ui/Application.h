@@ -19,6 +19,7 @@
 #include "imgui.h"
 
 struct GLFWwindow;
+struct GLFWmonitor;
 
 namespace Orange {
 
@@ -97,6 +98,7 @@ namespace Orange {
         // For custom titlebars
         void UI_DrawTitlebar(float& outTitlebarHeight);
         void UI_DrawMenubar();
+        GLFWmonitor* getMonitor(GLFWwindow* window);
     private:
         ApplicationSpecification m_Specification;
         GLFWwindow *m_WindowHandle = nullptr;

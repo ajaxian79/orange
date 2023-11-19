@@ -5,14 +5,21 @@
 #include "Image.h"
 
 #include "imgui.h"
-#include "backends/imgui_impl_vulkan.h"
 
 #include "Application.h"
 #include "imgui_impl_opengl3_loader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#ifdef INCLUDE_GL
 #include <GL/gl.h>
+#endif
+
+#ifdef INCLUDE_OPENGL
+#include <OpenGL/gl.h>
+#endif
+
 
 namespace Orange {
 
