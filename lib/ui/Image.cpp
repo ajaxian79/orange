@@ -58,14 +58,16 @@ namespace Orange {
 
 	}
 
-	Image::Image(int width, int height, ImageFormat format, const void* data)
+	Image::Image(int width, int height, ImageFormat format, const void* data, int data_size)
 		: m_Width(width), m_Height(height), m_Format(format)
 	{
 		if (data) {
-            int width, height, channels;
+            int channels;
 
             m_Width = width;
             m_Height = height;
+            m_Data = malloc(data_size);
+            memcpy(m_Data, data, data_size);
 
             // Create a OpenGL texture identifier
             GLuint image_texture;
@@ -90,10 +92,13 @@ namespace Orange {
 
 	Image::~Image()
 	{
-
+        if (m_Data != NULL) {
+            free(m_Data);
+            m_Data = NULL;
+        }
 	}
 
-    void* Image::Decode(const void* buffer, int length, int& outWidth, int& outHeight)
+    void* Image::Decode(const void* buffer, int length, int* outWidth, int* outHeight)
     {
         int width, height, channels;
         uint8_t* data = nullptr;
@@ -102,8 +107,8 @@ namespace Orange {
         data = stbi_load_from_memory((const stbi_uc*)buffer, length, &width, &height, &channels, 4);
         size = width * height * 4;
 
-        outWidth = width;
-        outHeight = height;
+        *outWidth = width;
+        *outHeight = height;
 
         return data;
     }

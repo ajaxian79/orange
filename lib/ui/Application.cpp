@@ -191,24 +191,24 @@ namespace Orange {
         // Load images
 
         int w, h;
-        void* data = Image::Decode(g_WalnutIcon, sizeof(g_WalnutIcon), w, h);
-        m_AppHeaderIcon = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        void* data = Image::Decode(g_WalnutIcon, sizeof(g_WalnutIcon), &w, &h);
+        m_AppHeaderIcon = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WalnutIcon));
         free(data);
 
-        data = Image::Decode(g_WindowMinimizeIcon, sizeof(g_WindowMinimizeIcon), w, h);
-        m_IconMinimize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        data = Image::Decode(g_WindowMinimizeIcon, sizeof(g_WindowMinimizeIcon), &w, &h);
+        m_IconMinimize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowMinimizeIcon));
         free(data);
 
-        data = Image::Decode(g_WindowMaximizeIcon, sizeof(g_WindowMaximizeIcon), w, h);
-        m_IconMaximize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        data = Image::Decode(g_WindowMaximizeIcon, sizeof(g_WindowMaximizeIcon), &w, &h);
+        m_IconMaximize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowMaximizeIcon));
         free(data);
 
-        data = Image::Decode(g_WindowRestoreIcon, sizeof(g_WindowRestoreIcon), w, h);
-        m_IconRestore = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        data = Image::Decode(g_WindowRestoreIcon, sizeof(g_WindowRestoreIcon), &w, &h);
+        m_IconRestore = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowRestoreIcon));
         free(data);
 
-        data = Image::Decode(g_WindowCloseIcon, sizeof(g_WindowCloseIcon), w, h);
-        m_IconClose = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data);
+        data = Image::Decode(g_WindowCloseIcon, sizeof(g_WindowCloseIcon), &w, &h);
+        m_IconClose = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowCloseIcon));
         free(data);
     }
 

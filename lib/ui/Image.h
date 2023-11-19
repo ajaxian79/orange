@@ -21,7 +21,7 @@ namespace Orange {
 	{
 	public:
 		Image(std::string_view path);
-		Image(int width, int height, ImageFormat format, const void* data = nullptr);
+		Image(int width, int height, ImageFormat format, const void* data = nullptr, int data_size = 0);
 		~Image();
 
         ImTextureID GetDescriptorSet() const { return m_DescriptorSet; }
@@ -29,9 +29,10 @@ namespace Orange {
 		int GetWidth() const { return m_Width; }
 		int GetHeight() const { return m_Height; }
 
-        static void* Decode(const void* data, int length, int& outWidth, int& outHeight);
+        static void* Decode(const void* data, int length, int* outWidth, int* outHeight);
 	private:
 		int m_Width = 0, m_Height = 0;
+        void* m_Data = NULL;
 
 		ImageFormat m_Format = ImageFormat::None;
 
