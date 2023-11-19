@@ -48,8 +48,7 @@
 #include "imgui_internal.h"
 
 // Embedded images
-#include "../images/Walnut-Icon.embed"
-#include "../images/WindowImages.embed"
+#include "../images/resources.embed"
 
 extern bool g_ApplicationRunning;
 
@@ -204,8 +203,8 @@ namespace Orange {
         // Load images
 
         int w, h;
-        void* data = Image::Decode(g_WalnutIcon, sizeof(g_WalnutIcon), &w, &h);
-        m_AppHeaderIcon = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WalnutIcon));
+        void* data = Image::Decode(g_OrangeIcon, sizeof(g_OrangeIcon), &w, &h);
+        m_AppHeaderIcon = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_OrangeIcon));
         free(data);
 
         data = Image::Decode(g_WindowMinimizeIcon, sizeof(g_WindowMinimizeIcon), &w, &h);
