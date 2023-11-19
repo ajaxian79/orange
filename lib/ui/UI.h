@@ -23,26 +23,26 @@ namespace Orange::UI {
 	ImRect RectOffset(const ImRect& rect, float x, float y);
 	ImRect RectOffset(const ImRect& rect, ImVec2 xy);
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImVec2 rectMin, ImVec2 rectMax);
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImRect rectangle);
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImVec2 rectMin, ImVec2 rectMax);
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImRect rectangle);
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed);
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed);
 
 	void RenderWindowOuterBorders(ImGuiWindow* window);

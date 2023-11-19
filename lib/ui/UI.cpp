@@ -4,6 +4,7 @@
 
 
 #include "UI.h"
+#include <stdio.h>
 
 namespace Orange::UI {
 
@@ -53,10 +54,20 @@ namespace Orange::UI {
 		return RectOffset(rect, xy.x, xy.y);
 	}
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
+	bool DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImVec2 rectMin, ImVec2 rectMax)
 	{
+        ImVec2 mousePos = ImGui::GetMousePos();
+        ImRect rectangle = ImRect(rectMin, rectMax);
+        bool pressed = false;
+
+        if (rectangle.Contains(mousePos)) {
+            if (ImGui::IsMouseClicked(0)) {
+                pressed = true;
+            }
+        }
+
 		auto* drawList = ImGui::GetForegroundDrawList();
 		if (ImGui::IsItemActive())
 			drawList->AddImage(imagePressed->GetDescriptorSet(), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintPressed);
@@ -64,40 +75,42 @@ namespace Orange::UI {
 			drawList->AddImage(imagePressed->GetDescriptorSet(), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintHovered);
 		else
 			drawList->AddImage(imagePressed->GetDescriptorSet(), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintNormal);
+
+        return pressed;
 	};
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImRect rectangle)
 	{
-		DrawButtonImage(imageNormal, imageHovered, imagePressed, tintNormal, tintHovered, tintPressed, rectangle.Min, rectangle.Max);
+        return DrawButtonImage(imageNormal, imageHovered, imagePressed, tintNormal, tintHovered, tintPressed, rectangle.Min, rectangle.Max);
 	};
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImVec2 rectMin, ImVec2 rectMax)
 	{
-		DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, rectMin, rectMax);
+        return DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, rectMin, rectMax);
 	};
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImRect rectangle)
 	{
-		DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, rectangle.Min, rectangle.Max);
+        return DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, rectangle.Min, rectangle.Max);
 	};
 
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& imageNormal, const std::shared_ptr<Orange::Image>& imageHovered, const std::shared_ptr<Orange::Image>& imagePressed,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed)
 	{
-		DrawButtonImage(imageNormal, imageHovered, imagePressed, tintNormal, tintHovered, tintPressed, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        return DrawButtonImage(imageNormal, imageHovered, imagePressed, tintNormal, tintHovered, tintPressed, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 	};
 
-	void DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
+    bool DrawButtonImage(const std::shared_ptr<Orange::Image>& image,
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed)
 	{
-		DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+		return DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 	};
 
 	// Exposed to be used for window with disabled decorations

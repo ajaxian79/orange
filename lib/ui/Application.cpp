@@ -125,7 +125,9 @@ namespace Orange {
 
             // NOTE(Yan): Undecorated windows are probably
             //            also desired, so make this an option
-            // glfwWindowHint(GLFW_DECORATED, false);
+            glfwWindowHint(GLFW_DECORATED, false);
+//            glfwWindowHint(GLFW_FLOATING, true);
+//            glfwWindowHint(GLFW_RESIZABLE, true);
         }
 
         m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(),
@@ -333,18 +335,16 @@ namespace Orange {
             const int iconWidth = m_IconMinimize->GetWidth();
             const int iconHeight = m_IconMinimize->GetHeight();
             const float padY = (buttonHeight - (float)iconHeight) / 2.0f;
-            if (ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight)))
-            {
+            ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight));
+
+            if (UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY))) {
                 // TODO: move this stuff to a better place, like Window class
                 if (m_WindowHandle)
                 {
                     Application::Get().QueueEvent([windowHandle = m_WindowHandle]() { glfwIconifyWindow(windowHandle); });
                 }
             }
-
-            UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY));
         }
-
 
         // Maximize Button
         ImGui::Spring(-1.0f, 17.0f);
@@ -355,7 +355,9 @@ namespace Orange {
 
             const bool isMaximized = IsMaximized();
 
-            if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
+            ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight));
+
+            if (UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP))
             {
                 Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
                                               {
@@ -365,8 +367,6 @@ namespace Orange {
                                                       glfwMaximizeWindow(windowHandle);
                                               });
             }
-
-            UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP);
         }
 
         // Close Button
@@ -375,10 +375,12 @@ namespace Orange {
         {
             const int iconWidth = m_IconClose->GetWidth();
             const int iconHeight = m_IconClose->GetHeight();
-            if (ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight)))
+
+            ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight));
+
+            if (UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP))
                 Application::Get().Close();
 
-            UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP);
         }
 
         ImGui::Spring(-1.0f, 18.0f);
@@ -542,6 +544,13 @@ namespace Orange {
             m_FrameTime = time - m_LastFrameTime;
             m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
             m_LastFrameTime = time;
+
+            while(!m_EventQueue.empty()) {
+                std::function<void()> func = m_EventQueue.front();
+                m_EventQueue.pop();
+
+                func();
+            }
         }
 
     }
