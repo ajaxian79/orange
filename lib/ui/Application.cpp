@@ -41,14 +41,7 @@
 
 #include <iostream>
 
-// Embedded font
-#include "../fonts/Roboto-Regular.embed"
-#include "../fonts/Roboto-Bold.embed"
-#include "../fonts/Roboto-Italic.embed"
 #include "imgui_internal.h"
-
-// Embedded images
-#include "../images/resources.embed"
 
 extern bool g_ApplicationRunning;
 
@@ -67,8 +60,6 @@ extern bool g_ApplicationRunning;
 static void glfw_error_callback(int error, const char *description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
-
-static std::unordered_map<std::string, ImFont*> s_Fonts;
 
 static Orange::Application *s_Instance = nullptr;
 
@@ -189,39 +180,8 @@ namespace Orange {
         ImGui_ImplGlfw_InitForOpenGL(m_WindowHandle, true);
         ImGui_ImplOpenGL3_Init(glsl_version);
 
-        // Load default font
-        ImFontConfig fontConfig;
-        fontConfig.FontDataOwnedByAtlas = false;
-        ImFont *robotoFont = io.Fonts->AddFontFromMemoryTTF((void *) g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f,
-                                                            &fontConfig);
-        s_Fonts["Default"] = robotoFont;
-        s_Fonts["Bold"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoBold, sizeof(g_RobotoBold), 20.0f, &fontConfig);
-        s_Fonts["Italic"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoItalic, sizeof(g_RobotoItalic), 20.0f, &fontConfig);
-        io.FontDefault = robotoFont;
+        Resources::load();
 
-
-        // Load images
-
-        int w, h;
-        void* data = Image::Decode(g_OrangeIcon, sizeof(g_OrangeIcon), &w, &h);
-        m_AppHeaderIcon = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_OrangeIcon));
-        free(data);
-
-        data = Image::Decode(g_WindowMinimizeIcon, sizeof(g_WindowMinimizeIcon), &w, &h);
-        m_IconMinimize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowMinimizeIcon));
-        free(data);
-
-        data = Image::Decode(g_WindowMaximizeIcon, sizeof(g_WindowMaximizeIcon), &w, &h);
-        m_IconMaximize = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowMaximizeIcon));
-        free(data);
-
-        data = Image::Decode(g_WindowRestoreIcon, sizeof(g_WindowRestoreIcon), &w, &h);
-        m_IconRestore = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowRestoreIcon));
-        free(data);
-
-        data = Image::Decode(g_WindowCloseIcon, sizeof(g_WindowCloseIcon), &w, &h);
-        m_IconClose = std::make_shared<Orange::Image>(w, h, ImageFormat::RGBA, data, sizeof(g_WindowCloseIcon));
-        free(data);
     }
 
     void Application::Shutdown() {
@@ -230,15 +190,7 @@ namespace Orange {
 
         m_LayerStack.clear();
 
-
-        // Release resources
-        // NOTE(Yan): to avoid doing this manually, we shouldn't
-        //            store resources in this Application class
-        m_AppHeaderIcon.reset();
-        m_IconClose.reset();
-        m_IconMinimize.reset();
-        m_IconMaximize.reset();
-        m_IconRestore.reset();
+        Resources::release();
 
         // Cleanup
         ImGui_ImplOpenGL3_Shutdown();
@@ -308,7 +260,7 @@ namespace Orange {
             const ImVec2 logoOffset(16.0f + windowPadding.x, 5.0f + windowPadding.y + titlebarVerticalOffset);
             const ImVec2 logoRectStart = { ImGui::GetItemRectMin().x + logoOffset.x, ImGui::GetItemRectMin().y + logoOffset.y };
             const ImVec2 logoRectMax = { logoRectStart.x + logoWidth, logoRectStart.y + logoHeight };
-            fgDrawList->AddImage(m_AppHeaderIcon->GetDescriptorSet(), logoRectStart, logoRectMax);
+            fgDrawList->AddImage(Resources::getIconOrange()->GetDescriptorSet(), logoRectStart, logoRectMax);
         }
 
         ImGui::BeginHorizontal("Titlebar", { ImGui::GetWindowWidth() - windowPadding.y * 2.0f, ImGui::GetFrameHeightWithSpacing() });
@@ -373,12 +325,12 @@ namespace Orange {
         UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
-            const int iconWidth = m_IconMinimize->GetWidth();
-            const int iconHeight = m_IconMinimize->GetHeight();
+            const int iconWidth = Resources::getIconMinimize()->GetWidth();
+            const int iconHeight = Resources::getIconMinimize()->GetHeight();
             const float padY = (buttonHeight - (float)iconHeight) / 2.0f;
             ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight));
 
-            if (UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY))) {
+            if (UI::DrawButtonImage(Resources::getIconMinimize(), buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY))) {
                 // TODO: move this stuff to a better place, like Window class
                 if (m_WindowHandle)
                 {
@@ -392,12 +344,12 @@ namespace Orange {
         UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
-            const int iconWidth = m_IconMaximize->GetWidth();
-            const int iconHeight = m_IconMaximize->GetHeight();
+            const int iconWidth = Resources::getIconRestore()->GetWidth();
+            const int iconHeight = Resources::getIconRestore()->GetHeight();
 
             ImGui::InvisibleButton("Restore", ImVec2(buttonWidth, buttonHeight));
 
-            if (UI::DrawButtonImage(m_IconRestore, buttonColN, buttonColH, buttonColP))
+            if (UI::DrawButtonImage(Resources::getIconRestore(), buttonColN, buttonColH, buttonColP))
             {
                 GLFWmonitor* MonitorHandle = getMonitor(m_WindowHandle);
                 int x, y, width, height;
@@ -422,12 +374,12 @@ namespace Orange {
         UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
-            const int iconWidth = m_IconMaximize->GetWidth();
-            const int iconHeight = m_IconMaximize->GetHeight();
+            const int iconWidth = Resources::getIconMaximize()->GetWidth();
+            const int iconHeight = Resources::getIconMaximize()->GetHeight();
 
             ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight));
 
-            if (UI::DrawButtonImage(m_IconMaximize, buttonColN, buttonColH, buttonColP))
+            if (UI::DrawButtonImage(Resources::getIconMaximize(), buttonColN, buttonColH, buttonColP))
             {
                 GLFWmonitor* MonitorHandle = getMonitor(m_WindowHandle);
                 int x,y,width,height;
@@ -445,12 +397,12 @@ namespace Orange {
         UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
-            const int iconWidth = m_IconClose->GetWidth();
-            const int iconHeight = m_IconClose->GetHeight();
+            const int iconWidth = Resources::getIconClose()->GetWidth();
+            const int iconHeight = Resources::getIconClose()->GetHeight();
 
             ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight));
 
-            if (UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP))
+            if (UI::DrawButtonImage(Resources::getIconClose(), UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP))
                 Application::Get().Close();
 
         }

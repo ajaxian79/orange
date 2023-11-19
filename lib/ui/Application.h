@@ -17,6 +17,7 @@
 #include "Image.h"
 
 #include "imgui.h"
+#include "orange/lib/core/Resources.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -73,7 +74,7 @@ namespace Orange {
         bool IsTitleBarHovered() const { return m_TitleBarHovered; }
 
         bool IsMaximized() const;
-        std::shared_ptr<Image> GetApplicationIcon() const { return m_AppHeaderIcon; }
+        std::shared_ptr<Image> GetApplicationIcon() const { return Resources::getIconOrange(); }
 
         static void SubmitResourceFree(std::function<void()> &&func);
 
@@ -115,15 +116,6 @@ namespace Orange {
 
         std::mutex m_EventQueueMutex;
         std::queue<std::function<void()>> m_EventQueue;
-
-        // Resources
-        // TODO(Yan): move out of application class since this can't be tied
-        //            to application lifetime
-        std::shared_ptr<Orange::Image> m_AppHeaderIcon;
-        std::shared_ptr<Orange::Image> m_IconClose;
-        std::shared_ptr<Orange::Image> m_IconMinimize;
-        std::shared_ptr<Orange::Image> m_IconMaximize;
-        std::shared_ptr<Orange::Image> m_IconRestore;
 
     };
 
