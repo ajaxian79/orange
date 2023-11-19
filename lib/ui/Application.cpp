@@ -222,11 +222,11 @@ namespace Orange {
         // Release resources
         // NOTE(Yan): to avoid doing this manually, we shouldn't
         //            store resources in this Application class
-//        m_AppHeaderIcon.reset();
-//        m_IconClose.reset();
-//        m_IconMinimize.reset();
-//        m_IconMaximize.reset();
-//        m_IconRestore.reset();
+        m_AppHeaderIcon.reset();
+        m_IconClose.reset();
+        m_IconMinimize.reset();
+        m_IconMaximize.reset();
+        m_IconRestore.reset();
 
         // Cleanup
         ImGui_ImplOpenGL3_Shutdown();
