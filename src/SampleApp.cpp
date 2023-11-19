@@ -61,6 +61,10 @@ Orange::Application *Orange::CreateApplication(int argc, char **argv) {
     spec.CustomTitlebar = true;
 
     Orange::Application *app = new Orange::Application(spec);
+
+    app->setConfigFileName("sampleapp.ini");
+    app->setLogFileName("sampleapp.log");
+
     std::shared_ptr<ExampleLayer> exampleLayer = std::make_shared<ExampleLayer>();
     app->PushLayer(exampleLayer);
     app->SetMenubarCallback([app, exampleLayer]() {

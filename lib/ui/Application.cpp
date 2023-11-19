@@ -145,6 +145,9 @@ namespace Orange {
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         (void) io;
+
+
+
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
@@ -566,5 +569,33 @@ namespace Orange {
 
     float Application::GetTime() {
         return (float) glfwGetTime();
+    }
+
+    const char* Application::getConfigFileName() {
+        ImGuiIO &io = ImGui::GetIO();
+        (void) io;
+
+        return io.IniFilename;
+    }
+
+    void Application::setConfigFileName(const char* name){
+        ImGuiIO &io = ImGui::GetIO();
+        (void) io;
+
+        io.IniFilename = name;
+    }
+
+    const char* Application::getLogFileName(){
+        ImGuiIO &io = ImGui::GetIO();
+        (void) io;
+
+        return io.LogFilename;
+    }
+
+    void Application::setLogFileName(const char* name) {
+        ImGuiIO &io = ImGui::GetIO();
+        (void) io;
+
+        io.LogFilename = name;
     }
 }

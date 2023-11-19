@@ -76,6 +76,14 @@ namespace Orange {
 
         static void SubmitResourceFree(std::function<void()> &&func);
 
+        const char* getConfigFileName();
+
+        void setConfigFileName(const char* name);
+
+        const char* getLogFileName();
+
+        void setLogFileName(const char* name);
+
         template<typename Func>
         void QueueEvent(Func&& func)
         {
