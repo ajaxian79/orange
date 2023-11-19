@@ -45,8 +45,7 @@ include_directories(${SPDLOG_DIR}/include ..)
 #set(LIBRARIES "glfw;${VULKAN_LIBRARY}")
 #set(LIBRARIES "glfw;Vulkan::Vulkan")
 
-find_library(OPENGL_LIBRARY
-NAMES GL)
+find_library(OPENGL_LIBRARY NAMES GL OpenGL)
 set(LIBRARIES "glfw;${OPENGL_LIBRARY}")
 
 # Use vulkan headers from glfw:
@@ -58,3 +57,19 @@ file(GLOB_RECURSE lib_sources ./lib/*.cpp)
 add_executable(orange ${app_sources} ${lib_sources} ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
 target_link_libraries(orange ${LIBRARIES})
 target_compile_definitions(orange PUBLIC -DImTextureID=ImU64)
+
+if(APPLE)
+    target_compile_definitions(orange PUBLIC INCLUDE_OPENGL)
+else()
+    target_compile_definitions(orange PUBLIC INCLUDE_GL)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES Darwin)
+    target_compile_definitions(orange PUBLIC BUILD_SYSTEM_DARWIN)
+elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
+    target_compile_definitions(orange PUBLIC BUILD_SYSTEM_LINUX)
+elseif (CMAKE_SYSTEM_NAME MATCHES Windows)
+    target_compile_definitions(orange PUBLIC BUILD_SYSTEM_WINDOWS)
+else ()
+    target_compile_definitions(orange PUBLIC BUILD_SYSTEM_UNKNOWN)
+endif ()

@@ -26,9 +26,17 @@
 #include <GLES2/gl2.h>
 #endif
 
+#undef GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#ifdef INCLUDE_GL
 #include <GL/gl.h>
-#include <vulkan/vulkan.h>
+#endif
+
+#ifdef INCLUDE_OPENGL
+#include <OpenGL/gl.h>
+#endif
+
 #include <glm/glm.hpp>
 
 #include <iostream>
@@ -243,6 +251,36 @@ namespace Orange {
         Log::Shutdown();
     }
 
+    GLFWmonitor* Application::getMonitor(GLFWwindow* window) {
+        GLFWmonitor* MonitorHandle = glfwGetWindowMonitor(window);
+        int x,y,width,height;
+        int wx,wy,wwidth,wheight;
+        glfwGetWindowPos(window, &wx, &wy);
+        glfwGetWindowSize(window, &wwidth, &wheight);
+
+        if (MonitorHandle == NULL) {
+
+            int count = 0;
+
+            GLFWmonitor** monitors = glfwGetMonitors(&count);
+            ImRect windowRect = ImRect((float) wx,(float) wy,(float) wwidth,(float) wheight);
+
+            for (int index = 0; index < count; index++) {
+                glfwGetMonitorWorkarea(monitors[index],&x,&y,&width, &height);
+
+                ImRect monitorRect = ImRect((float) x,(float) y,(float) width,(float) height);
+                if (monitorRect.Contains(windowRect)) {
+                    MonitorHandle = monitors[index];
+                }
+
+//                        printf("x,y: %d, %d\nwidth,height: %d,%d\n", x,y,width,height);
+            }
+
+//                    printf("\nwx,wy: %d, %d\nwwidth,wheight: %d,%d\n", wx,wy,wwidth,wheight);
+        }
+
+        return MonitorHandle;
+    }
 
     void Application::UI_DrawTitlebar(float& outTitlebarHeight)
     {
@@ -330,6 +368,7 @@ namespace Orange {
         // Minimize Button
 
         ImGui::Spring();
+        UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
             const int iconWidth = m_IconMinimize->GetWidth();
@@ -341,36 +380,67 @@ namespace Orange {
                 // TODO: move this stuff to a better place, like Window class
                 if (m_WindowHandle)
                 {
-                    Application::Get().QueueEvent([windowHandle = m_WindowHandle]() { glfwIconifyWindow(windowHandle); });
+                    glfwIconifyWindow(m_WindowHandle);
                 }
             }
         }
 
         // Maximize Button
         ImGui::Spring(-1.0f, 17.0f);
+        UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
             const int iconWidth = m_IconMaximize->GetWidth();
             const int iconHeight = m_IconMaximize->GetHeight();
 
-            const bool isMaximized = IsMaximized();
+            ImGui::InvisibleButton("Restore", ImVec2(buttonWidth, buttonHeight));
+
+            if (UI::DrawButtonImage(m_IconRestore, buttonColN, buttonColH, buttonColP))
+            {
+                GLFWmonitor* MonitorHandle = getMonitor(m_WindowHandle);
+                int x, y, width, height;
+
+                if (MonitorHandle != NULL) {
+                    glfwGetMonitorWorkarea(MonitorHandle, &x, &y, &width, &height);
+
+                    x = width / 30;
+                    y = height / 30;
+
+                    width -= x * 2;
+                    height -= y * 2;
+
+                    glfwSetWindowPos(m_WindowHandle, x, y);
+                    glfwSetWindowSize(m_WindowHandle, width, height);
+                }
+            }
+        }
+
+        // Maximize Button
+        ImGui::Spring(-1.0f, 17.0f);
+        UI::ShiftCursorX(-8.0f);
+        UI::ShiftCursorY(8.0f);
+        {
+            const int iconWidth = m_IconMaximize->GetWidth();
+            const int iconHeight = m_IconMaximize->GetHeight();
 
             ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight));
 
-            if (UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP))
+            if (UI::DrawButtonImage(m_IconMaximize, buttonColN, buttonColH, buttonColP))
             {
-                Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
-                                              {
-                                                  if (isMaximized)
-                                                      glfwRestoreWindow(windowHandle);
-                                                  else
-                                                      glfwMaximizeWindow(windowHandle);
-                                              });
+                GLFWmonitor* MonitorHandle = getMonitor(m_WindowHandle);
+                int x,y,width,height;
+
+                if (MonitorHandle != NULL) {
+                    glfwGetMonitorWorkarea(MonitorHandle, &x, &y, &width, &height);
+                    glfwSetWindowPos(m_WindowHandle, x, y);
+                    glfwSetWindowSize(m_WindowHandle, width, height);
+                }
             }
         }
 
         // Close Button
         ImGui::Spring(-1.0f, 15.0f);
+        UI::ShiftCursorX(-8.0f);
         UI::ShiftCursorY(8.0f);
         {
             const int iconWidth = m_IconClose->GetWidth();
