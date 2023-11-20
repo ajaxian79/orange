@@ -25,26 +25,16 @@ struct GLFWmonitor;
 namespace Orange {
 
   struct ApplicationSpecification {
-    std::string Name = "Walnut App";
-    uint32_t Width = 1600;
-    uint32_t Height = 900;
+    std::string name = "Orange App";
+    uint32_t width = 1600;
+    uint32_t height = 900;
 
     std::filesystem::path IconPath;
-
-    bool WindowResizeable = true;
-
-    // Uses custom Walnut titlebar instead
-    // of Windows default
-    bool CustomTitlebar = false;
-
-    // Window will be created in the center
-    // of primary monitor
-    bool CenterWindow = false;
   };
 
   class Application {
   public:
-    Application(const ApplicationSpecification &applicationSpecification = ApplicationSpecification());
+    explicit Application(const ApplicationSpecification &applicationSpecification = ApplicationSpecification());
 
     ~Application();
 
@@ -93,9 +83,7 @@ namespace Orange {
     }
 
   private:
-    void Init();
-
-    void Shutdown();
+    void notifyAndReleaseLayers();
 
     // For custom titlebars
     void UI_DrawTitlebar(float &outTitlebarHeight);
@@ -105,7 +93,7 @@ namespace Orange {
     GLFWmonitor *getMonitor(GLFWwindow *window);
 
   private:
-    ApplicationSpecification m_Specification;
+    ApplicationSpecification specification;
     GLFWwindow *m_WindowHandle = nullptr;
     bool m_Running = false;
 

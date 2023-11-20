@@ -191,6 +191,27 @@ namespace Orange::UI {
   void
   DrawBorder(ImRect rect, float thickness = 1.0f, float rounding = 0.0f, float offsetX = 0.0f, float offsetY = 0.0f);
 
+  const char* getVersion();
+
+  void setWindowHintsForVersion();
+
+  void setWindowHintsForContext();
+
+  void createImmediateModeGuiContext();
+
+  void configureImmediateModeGuiContext();
+
+  bool areViewPortsEnabled();
+
+  void styleImmediateModeGuiContext();
+
+  void setupPlatformAndRendererBackends(GLFWwindow * windowHandle);
+
+  GLFWwindow * createWindowContext(int width, int height, const std::string& title);
+
+  GLFWwindow * createAndConfigureWindowContext(int width, int height, const std::string& title);
+
+  void destroyWindowContext(GLFWwindow* windowHandle);
 }
 
 #endif

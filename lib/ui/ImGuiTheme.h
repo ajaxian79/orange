@@ -128,7 +128,7 @@ namespace Orange::UI {
     }
   }
 
-  void SetHazelTheme();
+  void setCoreTheme();
 
 }
 

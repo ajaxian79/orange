@@ -27,7 +27,6 @@
 #endif
 
 #undef GLFW_INCLUDE_VULKAN
-
 #include <GLFW/glfw3.h>
 
 #ifdef INCLUDE_GL
@@ -60,150 +59,49 @@ extern bool g_ApplicationRunning;
 #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 
-static void glfw_error_callback(int error, const char *description) {
-  fprintf(stderr, "Glfw Error %d: %s\n", error, description);
-}
 
-static Orange::Application *s_Instance = nullptr;
+static Orange::Application *singletonInstance = nullptr;
 
 namespace Orange {
 
   Application::Application(const ApplicationSpecification &specification)
-      : m_Specification(specification) {
-    s_Instance = this;
+      : specification(specification) {
+    singletonInstance = this;
 
-    Init();
-  }
+    m_WindowHandle = UI::createAndConfigureWindowContext(specification.width, specification.height, specification.name);
 
-  Application::~Application() {
-    Shutdown();
-
-    s_Instance = nullptr;
-  }
-
-  Application &Application::Get() {
-    return *s_Instance;
-  }
-
-  void Application::Init() {
-    // Setup GLFW window
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit()) {
-      std::cerr << "Could not initalize GLFW!\n";
-      return;
-    }
-
-
-    // Decide GL+GLSL versions
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-    // GL ES 2.0 + GLSL 100
-const char* glsl_version = "#version 100";
-glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-#elif defined(__APPLE__)
-    // GL 3.2 + GLSL 150
-    const char *glsl_version = "#version 150";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
-#else
-    // GL 3.0 + GLSL 130
-    const char *glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
-#endif
-
-    // Create window with graphics context
-    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    if (m_Specification.CustomTitlebar) {
-      glfwWindowHint(GLFW_TITLEBAR, false);
-
-      // NOTE(Yan): Undecorated windows are probably
-      //            also desired, so make this an option
-      glfwWindowHint(GLFW_DECORATED, false);
-//            glfwWindowHint(GLFW_FLOATING, true);
-//            glfwWindowHint(GLFW_RESIZABLE, true);
-    }
-
-    m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(),
-                                      nullptr, nullptr);
     if (m_WindowHandle == nullptr) {
       std::cerr << "Could not initalize GLFW!\n";
       return;
     }
 
-    glfwMakeContextCurrent(m_WindowHandle);
-    glfwSwapInterval(1); // Enable vsync
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
-
-
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-    //io.ConfigViewportsNoAutoMerge = true;
-    //io.ConfigViewportsNoTaskBarIcon = true;
-
-    // Setup Dear ImGui style
-//        ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
-    // Theme colors
-    UI::SetHazelTheme();
-
-    // Style
-    ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowPadding = ImVec2(10.0f, 10.0f);
-    style.FramePadding = ImVec2(8.0f, 6.0f);
-    style.ItemSpacing = ImVec2(6.0f, 6.0f);
-    style.ChildRounding = 6.0f;
-    style.PopupRounding = 6.0f;
-    style.FrameRounding = 6.0f;
-    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-
-    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-      style.WindowRounding = 0.0f;
-      style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(m_WindowHandle, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
     Resources::load();
-
   }
 
-  void Application::Shutdown() {
+  Application::~Application() {
+    notifyAndReleaseLayers();
+
+    Resources::release();
+
+    UI::destroyWindowContext(m_WindowHandle);
+
+    g_ApplicationRunning = false;
+
+    Log::Shutdown();
+
+    singletonInstance = nullptr;
+  }
+
+  Application &Application::Get() {
+    return *singletonInstance;
+  }
+
+  void Application::notifyAndReleaseLayers() {
     for (auto &layer: m_LayerStack)
       layer->OnDetach();
 
     m_LayerStack.clear();
 
-    Resources::release();
-
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(m_WindowHandle);
-    glfwTerminate();
-
-    g_ApplicationRunning = false;
-
-    Log::Shutdown();
   }
 
   GLFWmonitor *Application::getMonitor(GLFWwindow *window) {
@@ -250,8 +148,8 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     auto *bgDrawList = ImGui::GetBackgroundDrawList();
     auto *fgDrawList = ImGui::GetForegroundDrawList();
     bgDrawList->AddRectFilled(titlebarMin, titlebarMax, UI::Colors::Theme::titlebar);
-    // DEBUG TITLEBAR BOUNDS
-    // fgDrawList->AddRect(titlebarMin, titlebarMax, UI::Colors::Theme::invalidPrefab);
+    //DEBUG TITLEBAR BOUNDS
+    //fgDrawList->AddRect(titlebarMin, titlebarMax, UI::Colors::Theme::invalidPrefab);
 
     // Logo
     {
@@ -264,7 +162,7 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     }
 
     ImGui::BeginHorizontal("Titlebar",
-                           {ImGui::GetWindowWidth() - windowPadding.y * 2.0f, ImGui::GetFrameHeightWithSpacing()});
+                           {ImGui::GetWindowWidth() - windowPadding.x * 2.0f, ImGui::GetFrameHeightWithSpacing()});
 
     static float moveOffsetX;
     static float moveOffsetY;
@@ -305,9 +203,21 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     {
       // Centered Window title
       ImVec2 currentCursorPos = ImGui::GetCursorPos();
-      ImVec2 textSize = ImGui::CalcTextSize(m_Specification.Name.c_str());
-      ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() * 0.5f - textSize.x * 0.5f, 2.0f + windowPadding.y + 6.0f));
-      ImGui::Text("%s", m_Specification.Name.c_str()); // Draw title
+      ImVec2 textSize = ImGui::CalcTextSize(specification.name.c_str());
+//      ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() * 0.5f - textSize.x * 0.5f, 2.0f + windowPadding.y + 6.0f));
+//      ImGui::Text("%s", specification.name.c_str()); // Draw title
+
+//      fgDrawList->AddRect(titlebarMin, titlebarMax, UI::Colors::Theme::invalidPrefab);
+
+      const char* string = specification.name.c_str();
+      ImGuiContext& g = *GImGui;
+
+      ImVec2 pos = ImVec2(ImGui::GetWindowWidth() * 0.5f - textSize.x * 0.5f, 2.0f + windowPadding.y + 6.0f);
+      pos.x += titlebarMin.x;
+      pos.y += titlebarMin.y;
+
+      fgDrawList->AddText(g.Font, g.FontSize, pos, ImGui::GetColorU32(ImGuiCol_Text), string, string + strlen(string), 0);
+
       ImGui::SetCursorPos(currentCursorPos);
     }
 
@@ -415,25 +325,18 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     if (!m_MenubarCallback)
       return;
 
-    if (m_Specification.CustomTitlebar) {
-      const ImRect menuBarRect = {ImGui::GetCursorPos(),
-                                  {ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x,
-                                   ImGui::GetFrameHeightWithSpacing()}};
+    const ImRect menuBarRect = {ImGui::GetCursorPos(),
+                                {ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x,
+                                 ImGui::GetFrameHeightWithSpacing()}};
 
-      ImGui::BeginGroup();
-      if (UI::BeginMenubar(menuBarRect)) {
-        m_MenubarCallback();
-      }
-
-      UI::EndMenubar();
-      ImGui::EndGroup();
-
-    } else {
-      if (ImGui::BeginMenuBar()) {
-        m_MenubarCallback();
-        ImGui::EndMenuBar();
-      }
+    ImGui::BeginGroup();
+    if (UI::BeginMenubar(menuBarRect)) {
+      m_MenubarCallback();
     }
+
+    UI::EndMenubar();
+    ImGui::EndGroup();
+
   }
 
   void Application::Run() {
@@ -477,8 +380,6 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
         window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                         ImGuiWindowFlags_NoMove;
         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        if (!m_Specification.CustomTitlebar && m_MenubarCallback)
-          window_flags |= ImGuiWindowFlags_MenuBar;
 
         const bool isMaximized = IsMaximized();
 
@@ -506,12 +407,10 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
           ImGui::PopStyleColor(); // ImGuiCol_Border
         }
 
-        if (m_Specification.CustomTitlebar) {
-          float titleBarHeight;
-          UI_DrawTitlebar(titleBarHeight);
-          ImGui::SetCursorPosY(titleBarHeight);
 
-        }
+        float titleBarHeight;
+        UI_DrawTitlebar(titleBarHeight);
+        ImGui::SetCursorPosY(titleBarHeight);
 
         // Dockspace
         ImGuiIO &io = ImGui::GetIO();
@@ -520,9 +419,6 @@ glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
         style.WindowMinSize.x = 370.0f;
         ImGui::DockSpace(ImGui::GetID("MyDockspace"));
         style.WindowMinSize.x = minWinSizeX;
-
-        if (!m_Specification.CustomTitlebar)
-          UI_DrawMenubar();
 
         for (auto &layer: m_LayerStack)
           layer->OnUIRender();

@@ -53,8 +53,7 @@ private:
 
 Orange::Application *Orange::CreateApplication(int argc, char **argv) {
   Orange::ApplicationSpecification spec;
-  spec.Name = "Orange Sample App";
-  spec.CustomTitlebar = true;
+  spec.name = "Orange Sample App";
 
   Orange::Application *app = new Orange::Application(spec);
 

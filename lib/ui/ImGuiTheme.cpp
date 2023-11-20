@@ -6,7 +6,7 @@
 
 namespace Orange::UI {
 
-  void SetHazelTheme() {
+  void setCoreTheme() {
     auto &style = ImGui::GetStyle();
     auto &colors = ImGui::GetStyle().Colors;
 

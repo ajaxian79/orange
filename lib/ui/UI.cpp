@@ -2,9 +2,18 @@
 // Created by ajaxian on 11/14/23.
 //
 
-
+#undef GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include "UI.h"
+#include "ImGuiTheme.h"
 #include <stdio.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
+
+static void glfw_error_callback(int error, const char *description) {
+  fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+}
 
 namespace Orange::UI {
 
@@ -620,5 +629,150 @@ namespace Orange::UI {
     drawList->AddRect(min, max, ImGui::ColorConvertFloat4ToU32(ImGui::GetStyleColorVec4(ImGuiCol_Border)), rounding, 0,
                       thickness);
   };
+  const char* getVersion() {
+    const char *glsl_version = "#version 130";
 
+    // Decide GL+GLSL versions
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+    glsl_version = "#version 100";
+#elif defined(__APPLE__)
+    // GL 3.2 + GLSL 150
+    glsl_version = "#version 150";
+#endif
+
+    return glsl_version;
+  }
+
+  void setWindowHintsForVersion() {
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#elif defined(__APPLE__)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+#else
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#endif
+  }
+
+  void setWindowHintsForContext() {
+    // Create window with graphics context
+    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    glfwWindowHint(GLFW_TITLEBAR, false);
+    glfwWindowHint(GLFW_DECORATED, false);
+    // glfwWindowHint(GLFW_FLOATING, true);
+    // glfwWindowHint(GLFW_RESIZABLE, true);
+  }
+
+  void createImmediateModeGuiContext() {
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+  }
+
+  void configureImmediateModeGuiContext() {
+
+    ImGuiIO &io = ImGui::GetIO();
+
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+    //io.ConfigViewportsNoAutoMerge = true;
+    //io.ConfigViewportsNoTaskBarIcon = true;
+
+  }
+
+  bool areViewPortsEnabled() {
+    ImGuiIO &io = ImGui::GetIO();
+
+    return io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable;
+  }
+
+  void styleImmediateModeGuiContext() {
+    // Setup Dear ImGui style
+    //ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
+    // Theme colors
+    UI::setCoreTheme();
+
+    // Style
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.WindowPadding = ImVec2(10.0f, 10.0f);
+    style.FramePadding = ImVec2(8.0f, 6.0f);
+    style.ItemSpacing = ImVec2(6.0f, 6.0f);
+    style.ChildRounding = 6.0f;
+    style.PopupRounding = 6.0f;
+    style.FrameRounding = 6.0f;
+    style.FrameBorderSize = 0.0f;
+    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+    style.DisplaySafeAreaPadding = ImVec2(0.0f, 0.0f);
+
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    if (UI::areViewPortsEnabled()) {
+      style.WindowRounding = 0.0f;
+      style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+  }
+
+  void setupPlatformAndRendererBackends(GLFWwindow * windowHandle) {
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(windowHandle, true);
+    ImGui_ImplOpenGL3_Init(UI::getVersion());
+  }
+
+  GLFWwindow * createWindowContext(int width, int height, const std::string& title) {
+    GLFWwindow* windowHandle = glfwCreateWindow(width, height, title.c_str(),
+                                      nullptr, nullptr);
+
+
+    if (windowHandle != nullptr) {
+      glfwMakeContextCurrent(windowHandle);
+      glfwSwapInterval(1); // Enable vsync
+    }
+
+    return windowHandle;
+  }
+
+  GLFWwindow * createAndConfigureWindowContext(int width, int height, const std::string& title) {
+    // Setup GLFW window
+    glfwSetErrorCallback(glfw_error_callback);
+    if (!glfwInit()) {
+      return nullptr;
+    }
+
+    UI::setWindowHintsForVersion();
+    UI::setWindowHintsForContext();
+
+    GLFWwindow* windowHandle = UI::createWindowContext(width, height, title);
+
+    if (windowHandle != nullptr) {
+
+
+      UI::createImmediateModeGuiContext();
+      UI::configureImmediateModeGuiContext();
+
+      UI::styleImmediateModeGuiContext();
+
+      UI::setupPlatformAndRendererBackends(windowHandle);
+    }
+
+    return windowHandle;
+  }
+
+  void destroyWindowContext(GLFWwindow* windowHandle) {
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(windowHandle);
+    glfwTerminate();
+  }
 }
