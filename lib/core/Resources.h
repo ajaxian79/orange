@@ -9,30 +9,33 @@
 #include "../ui/Image.h"
 
 namespace Orange {
-    class Resources {
-    public:
-        static void load();
-        static void release();
+  class Resources {
+  public:
+    static void load();
 
-        static const std::shared_ptr<Orange::Image> &getIconOrange();
+    static void release();
 
-        static const std::shared_ptr<Orange::Image> &getIconClose();
+    static const std::shared_ptr<Orange::Image> &getIconOrange();
 
-        static const std::shared_ptr<Orange::Image> &getIconMinimize();
+    static const std::shared_ptr<Orange::Image> &getIconClose();
 
-        static const std::shared_ptr<Orange::Image> &getIconMaximize();
+    static const std::shared_ptr<Orange::Image> &getIconMinimize();
 
-        static const std::shared_ptr<Orange::Image> &getIconRestore();
+    static const std::shared_ptr<Orange::Image> &getIconMaximize();
 
-    private:
-        static void loadFonts();
-        static void loadImages();
-        static std::shared_ptr<Orange::Image> iconOrange;
-        static std::shared_ptr<Orange::Image> iconClose;
-        static std::shared_ptr<Orange::Image> iconMinimize;
-        static std::shared_ptr<Orange::Image> iconMaximize;
-        static std::shared_ptr<Orange::Image> iconRestore;
-    };
+    static const std::shared_ptr<Orange::Image> &getIconRestore();
+
+  private:
+    static void loadFonts();
+
+    static void loadImages();
+
+    static std::shared_ptr<Orange::Image> iconOrange;
+    static std::shared_ptr<Orange::Image> iconClose;
+    static std::shared_ptr<Orange::Image> iconMinimize;
+    static std::shared_ptr<Orange::Image> iconMaximize;
+    static std::shared_ptr<Orange::Image> iconRestore;
+  };
 
 } // Orange
 

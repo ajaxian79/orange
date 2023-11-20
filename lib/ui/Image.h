@@ -10,38 +10,40 @@
 
 namespace Orange {
 
-	enum class ImageFormat
-	{
-		None = 0,
-		RGBA,
-		RGBA32F
-	};
+  enum class ImageFormat {
+    None = 0,
+    RGBA,
+    RGBA32F
+  };
 
-	class Image
-	{
-	public:
-		Image(std::string_view path);
-		Image(int width, int height, ImageFormat format, const void* data = nullptr, int data_size = 0);
-		~Image();
+  class Image {
+  public:
+    Image(std::string_view path);
 
-        ImTextureID GetDescriptorSet() const { return m_DescriptorSet; }
+    Image(int width, int height, ImageFormat format, const void *data = nullptr, int data_size = 0);
 
-		int GetWidth() const { return m_Width; }
-		int GetHeight() const { return m_Height; }
+    ~Image();
 
-        static void* Decode(const void* data, int length, int* outWidth, int* outHeight);
-	private:
-		int m_Width = 0, m_Height = 0;
-        void* m_Data = NULL;
+    ImTextureID GetDescriptorSet() const { return m_DescriptorSet; }
 
-		ImageFormat m_Format = ImageFormat::None;
+    int GetWidth() const { return m_Width; }
 
-		size_t m_AlignedSize = 0;
+    int GetHeight() const { return m_Height; }
 
-        ImTextureID m_DescriptorSet = (ImTextureID)0;
+    static void *Decode(const void *data, int length, int *outWidth, int *outHeight);
 
-		std::string m_Filepath;
-	};
+  private:
+    int m_Width = 0, m_Height = 0;
+    void *m_Data = NULL;
+
+    ImageFormat m_Format = ImageFormat::None;
+
+    size_t m_AlignedSize = 0;
+
+    ImTextureID m_DescriptorSet = (ImTextureID) 0;
+
+    std::string m_Filepath;
+  };
 
 }
 

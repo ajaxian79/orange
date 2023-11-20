@@ -7,18 +7,18 @@
 
 namespace Orange {
 
-    class Layer {
-    public:
-        virtual ~Layer() = default;
+  class Layer {
+  public:
+    virtual ~Layer() = default;
 
-        virtual void OnAttach() {}
+    virtual void OnAttach() {}
 
-        virtual void OnDetach() {}
+    virtual void OnDetach() {}
 
-        virtual void OnUpdate(float ts) {}
+    virtual void OnUpdate(float ts) {}
 
-        virtual void OnUIRender() {}
-    };
+    virtual void OnUIRender() {}
+  };
 
 }
 

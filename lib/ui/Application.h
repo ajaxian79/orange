@@ -24,102 +24,106 @@ struct GLFWmonitor;
 
 namespace Orange {
 
-    struct ApplicationSpecification {
-        std::string Name = "Walnut App";
-        uint32_t Width = 1600;
-        uint32_t Height = 900;
+  struct ApplicationSpecification {
+    std::string Name = "Walnut App";
+    uint32_t Width = 1600;
+    uint32_t Height = 900;
 
-        std::filesystem::path IconPath;
+    std::filesystem::path IconPath;
 
-        bool WindowResizeable = true;
+    bool WindowResizeable = true;
 
-        // Uses custom Walnut titlebar instead
-        // of Windows default
-        bool CustomTitlebar = false;
+    // Uses custom Walnut titlebar instead
+    // of Windows default
+    bool CustomTitlebar = false;
 
-        // Window will be created in the center
-        // of primary monitor
-        bool CenterWindow = false;
-    };
+    // Window will be created in the center
+    // of primary monitor
+    bool CenterWindow = false;
+  };
 
-    class Application {
-    public:
-        Application(const ApplicationSpecification &applicationSpecification = ApplicationSpecification());
+  class Application {
+  public:
+    Application(const ApplicationSpecification &applicationSpecification = ApplicationSpecification());
 
-        ~Application();
+    ~Application();
 
-        static Application &Get();
+    static Application &Get();
 
-        void Run();
+    void Run();
 
-        void SetMenubarCallback(const std::function<void()> &menubarCallback) { m_MenubarCallback = menubarCallback; }
+    void SetMenubarCallback(const std::function<void()> &menubarCallback) { m_MenubarCallback = menubarCallback; }
 
-        template<typename T>
-        void PushLayer() {
-            static_assert(std::is_base_of<Layer, T>::value, "Pushed type is not subclass of Layer!");
-            m_LayerStack.emplace_back(std::make_shared<T>())->OnAttach();
-        }
+    template<typename T>
+    void PushLayer() {
+      static_assert(std::is_base_of<Layer, T>::value, "Pushed type is not subclass of Layer!");
+      m_LayerStack.emplace_back(std::make_shared<T>())->OnAttach();
+    }
 
-        void PushLayer(const std::shared_ptr<Layer> &layer) {
-            m_LayerStack.emplace_back(layer);
-            layer->OnAttach();
-        }
+    void PushLayer(const std::shared_ptr<Layer> &layer) {
+      m_LayerStack.emplace_back(layer);
+      layer->OnAttach();
+    }
 
-        void Close();
+    void Close();
 
-        float GetTime();
+    float GetTime();
 
-        GLFWwindow *GetWindowHandle() const { return m_WindowHandle; }
+    GLFWwindow *GetWindowHandle() const { return m_WindowHandle; }
 
-        bool IsTitleBarHovered() const { return m_TitleBarHovered; }
+    bool IsTitleBarHovered() const { return m_TitleBarHovered; }
 
-        bool IsMaximized() const;
-        std::shared_ptr<Image> GetApplicationIcon() const { return Resources::getIconOrange(); }
+    bool IsMaximized() const;
 
-        static void SubmitResourceFree(std::function<void()> &&func);
+    std::shared_ptr<Image> GetApplicationIcon() const { return Resources::getIconOrange(); }
 
-        const char* getConfigFileName();
+    static void SubmitResourceFree(std::function<void()> &&func);
 
-        void setConfigFileName(const char* name);
+    const char *getConfigFileName();
 
-        const char* getLogFileName();
+    void setConfigFileName(const char *name);
 
-        void setLogFileName(const char* name);
+    const char *getLogFileName();
 
-        template<typename Func>
-        void QueueEvent(Func&& func)
-        {
-            m_EventQueue.push(func);
-        }
-    private:
-        void Init();
+    void setLogFileName(const char *name);
 
-        void Shutdown();
+    template<typename Func>
+    void QueueEvent(Func &&func) {
+      m_EventQueue.push(func);
+    }
 
-        // For custom titlebars
-        void UI_DrawTitlebar(float& outTitlebarHeight);
-        void UI_DrawMenubar();
-        GLFWmonitor* getMonitor(GLFWwindow* window);
-    private:
-        ApplicationSpecification m_Specification;
-        GLFWwindow *m_WindowHandle = nullptr;
-        bool m_Running = false;
+  private:
+    void Init();
 
-        float m_TimeStep = 0.0f;
-        float m_FrameTime = 0.0f;
-        float m_LastFrameTime = 0.0f;
+    void Shutdown();
 
-        bool m_TitleBarHovered = false;
+    // For custom titlebars
+    void UI_DrawTitlebar(float &outTitlebarHeight);
 
-        std::vector<std::shared_ptr<Layer>> m_LayerStack;
-        std::function<void()> m_MenubarCallback;
+    void UI_DrawMenubar();
 
-        std::mutex m_EventQueueMutex;
-        std::queue<std::function<void()>> m_EventQueue;
+    GLFWmonitor *getMonitor(GLFWwindow *window);
 
-    };
+  private:
+    ApplicationSpecification m_Specification;
+    GLFWwindow *m_WindowHandle = nullptr;
+    bool m_Running = false;
 
-    Application *CreateApplication(int argc, char **argv);
+    float m_TimeStep = 0.0f;
+    float m_FrameTime = 0.0f;
+    float m_LastFrameTime = 0.0f;
+
+    bool m_TitleBarHovered = false;
+
+    std::vector<std::shared_ptr<Layer>> m_LayerStack;
+    std::function<void()> m_MenubarCallback;
+
+    std::mutex m_EventQueueMutex;
+    std::queue<std::function<void()>> m_EventQueue;
+
+  };
+
+  Application *CreateApplication(int argc, char **argv);
 }
 
 #endif //ORANGE_APPLICATION_H
